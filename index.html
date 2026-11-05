@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>سماء العنابي - الواقع المعزز</title>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        /* طبقة الكاميرا */
+        #camera-stream { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+        
+        /* طبقة الواجهة والتصميم */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
+        
+        /* الجزء العلوي (الشعار وحالة التتبع) */
+        .top-bar { display: flex; justify-content: space-between; align-items: flex-start; padding: 15px; }
+        .tracking-status { background: rgba(0,0,0,0.6); color: #fff; padding: 5px 15px; border-radius: 20px; font-size: 14px; pointer-events: auto; border: 1px solid #555; }
+        .status-dot { color: #00ff00; text-shadow: 0 0 5px #00ff00; }
+        .logo-container { text-align: right; pointer-events: auto; }
+        .logo-container img { height: 120px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.6)); }
+        
+        /* الجزء السفلي (الأزرار والأسعار) */
+        .bottom-bar { padding: 15px; padding-bottom: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; pointer-events: auto; }
+        .action-btn { background: linear-gradient(135deg, #6c102a, #4a0b1d); border: 1.5px solid #d4af37; border-radius: 12px; color: #fff; padding: 12px 5px; font-size: 14px; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.6); cursor: pointer; transition: transform 0.1s; }
+        .action-btn:active { transform: scale(0.95); }
+        .btn-icon { font-size: 22px; margin-bottom: 5px; }
+        .btn-price { color: #d4af37; font-size: 13px; margin-top: 5px; background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 10px;}
+        
+        /* نافذة الدفع المنبثقة */
+        #payment-modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 20px; border-radius: 15px; z-index: 10; width: 85%; max-width: 350px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8); pointer-events: auto; direction: rtl; }
+        #payment-modal h3 { color: #6c102a; margin-top: 5px; }
+        #payment-modal input { width: 90%; padding: 12px; margin: 15px 0; border: 1px solid #ccc; border-radius: 8px; text-align: center; font-size: 15px; }
+        #payment-modal button { background: #6c102a; color: #d4af37; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; border: 1px solid #d4af37; }
+        .close-btn { position: absolute; top: 10px; left: 15px; cursor: pointer; font-size: 20px; color: #666; }
+    </style>
+</head>
+<body>
+    <!-- مسار الكاميرا -->
+    <video id="camera-stream" autoplay playsinline></video>
+    
+    <!-- واجهة المستخدم الشفافة -->
+    <div id="ui-layer">
+        <div class="top-bar">
+            <div class="logo-container">
+                <!-- استدعاء صورة الشعار التي أرفقتها -->
+                <img src="image_7e53dc.png" alt="شعار اليوم الوطني">
+            </div>
+            <div class="tracking-status">
+                VPS Tracking: Active <span class="status-dot">●</span>
+            </div>
+        </div>
+        
+        <!-- أزرار الخيارات والأسعار -->
+        <div class="bottom-bar">
+            <div class="action-btn" onclick="openModal('ألعاب نارية باسم عائلتك', 15)">
+                <span class="btn-icon">🎇</span>
+                ألعاب نارية باسم عائلتك
+                <span class="btn-price">(15 ر.ق)</span>
+            </div>
+            <div class="action-btn" onclick="openModal('أطلق صقراً باسمك', 10)">
+                <span class="btn-icon">🦅</span>
+                أطلق صقراً باسمك
+                <span class="btn-price">(10 ر.ق)</span>
+            </div>
+            <div class="action-btn" onclick="openModal('شعار اليوم الوطني مع اسمك', 20)">
+                <span class="btn-icon">🏅</span>
+                شعار اليوم الوطني مع اسمك
+                <span class="btn-price">(20 ر.ق)</span>
+            </div>
+            <div class="action-btn" onclick="openModal('علم قطر مع تهنئة', 5)">
+                <span class="btn-icon">🇶🇦</span>
+                علم قطر مع تهنئة
+                <span class="btn-price">(5 ر.ق)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة إدخال الاسم وتأكيد الدفع -->
+    <div id="payment-modal">
+        <span class="close-btn" onclick="closeModal()">✖</span>
+        <h3 id="modal-title">تأكيد الطلب</h3>
+        <p style="font-weight: bold; color: #333;">قيمة العرض: <span id="modal-price"></span> ر.ق</p>
+        <input type="text" id="user-name" placeholder="اكتب الاسم أو التهنئة هنا...">
+        <button onclick="processPayment()">انتقال للدفع (Apple Pay / بطاقة) 💳</button>
+    </div>
+
+    <script>
+        // كود تشغيل الكاميرا الخلفية للهاتف
+        const video = document.getElementById('camera-stream');
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                .then(function(stream) {
+                    video.srcObject = stream;
+                })
+                .catch(function(error) {
+                    console.error("خطأ في تشغيل الكاميرا: ", error);
+                    alert("يرجى السماح للمتصفح بالوصول للكاميرا.");
+                });
+        } else {
+            alert("متصفحك الحالي لا يدعم تشغيل الكاميرا مباشرة.");
+        }
+
+        // دوال التحكم في نوافذ الدفع
+        function openModal(itemName, price) {
+            document.getElementById('modal-title').innerText = itemName;
+            document.getElementById('modal-price').innerText = price;
+            document.getElementById('payment-modal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('payment-modal').style.display = 'none';
+            document.getElementById('user-name').value = '';
+        }
+
+        function processPayment() {
+            const name = document.getElementById('user-name').value;
+            if(name.trim() === "") {
+                alert("يرجى كتابة الاسم أو التهنئة أولاً لطباعتها في السماء!");
+                return;
+            }
+            // هنا يتم الربط لاحقاً مع بوابات الدفع الحقيقية
+            alert("تم استلام الطلب! جاري التحويل لبوابة الدفع لإطلاق (" + document.getElementById('modal-title').innerText + ") باسم: " + name);
+            closeModal();
+        }
+    </script>
+</body>
+</html>
