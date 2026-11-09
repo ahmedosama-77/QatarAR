@@ -11,14 +11,16 @@
   </head>
 
   <body style="margin: 0; overflow: hidden;">
+    <!-- تم إضافة أبعاد إجبارية للكاميرا لتحسين الدقة ومنع التمدد -->
     <a-scene
       vr-mode-ui="enabled: false"
       embedded
-      arjs="sourceType: webcam; debugUIEnabled: false;"
+      arjs="sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: false;"
     >
-      <a-camera gps-camera rotation-reader></a-camera>
+      <!-- تم إضافة fov="80" لتوسيع زاوية الكاميرا وإلغاء الزووم -->
+      <a-camera gps-camera rotation-reader fov="80"></a-camera>
 
-      <!-- المكعب التجريبي مبرمج على إحداثياتك الدقيقة -->
+      <!-- المكعب التجريبي على إحداثياتك -->
       <a-box 
         gps-entity-place="latitude: 25.2127517; longitude: 51.4679630;" 
         color="#6c102a" 
